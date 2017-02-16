@@ -1,0 +1,13 @@
+Observation,Data_Marking,Observation_Type_Value,Dimension_Hierarchy_1,Dimension_Name_1,Dimension_Value_1,Dimension_Hierarchy_2,Dimension_Name_2,Dimension_Value_2,Dimension_Hierarchy_3,Dimension_Name_3,Dimension_Value_3,Dimension_Hierarchy_4,Dimension_Name_4,Dimension_Value_4
+153223,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,All categories: Age 16 and over,,Residence Type,All categories: Residence Type
+118177,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,All categories: Age 16 and over,,Residence Type,Lives in a household
+35046,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,All categories: Age 16 and over,,Residence Type,Lives in a communal establishment
+47799,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 16 to 24,,Residence Type,All categories: Residence Type
+28618,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 16 to 24,,Residence Type,Lives in a household
+19181,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 16 to 24,,Residence Type,Lives in a communal establishment
+53848,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 25 to 34,,Residence Type,All categories: Residence Type
+41233,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 25 to 34,,Residence Type,Lives in a household
+12615,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 25 to 34,,Residence Type,Lives in a communal establishment
+42680,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 35 to 49,,Residence Type,All categories: Residence Type
+39788,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 35 to 49,,Residence Type,Lives in a household
+2892,,,2011STATH,Geographic_Hierarchy,K04000001,,Sex,All categories: Sex,,Age,Age 35 to 49,,Residence Type,Lives in a communal establishment
