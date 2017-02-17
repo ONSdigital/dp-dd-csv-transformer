@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -35,10 +34,8 @@ var unsupportedFileTypeErr = errors.New("Unspported file type.")
 var awsClientErr = errors.New("Error while attempting get to get from from AWS s3 bucket.")
 var awsService = aws.NewService()
 var csvTransformer transformer.CSVTransformer = transformer.NewTransformer()
-var readFilterRequestBody requestBodyReader = ioutil.ReadAll
 
 // Responses
-var transformRespUnmarshalBody = TransformResponse{"Error when attempting to unmarshal request body."}
 var transformRespUnsupportedFileType = TransformResponse{"Unspported file type. Please specify a filePath for a .csv file."}
 var transformResponseSuccess = TransformResponse{"Your request is being processed."}
 
@@ -94,9 +91,6 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 	return transformResponseSuccess
 }
 
-func setReader(reader requestBodyReader) {
-	readFilterRequestBody = reader
-}
 
 func setCSVTransformer(t transformer.CSVTransformer) {
 	csvTransformer = t
