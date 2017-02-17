@@ -16,11 +16,11 @@ const outputFile = "output_folder/transformer.csv"
 var inputUrl = fmt.Sprintf("s3://%s/%s", inputBucket, inputFile)
 var outputUrl = fmt.Sprintf("s3://%s/%s", outputBucket, outputFile)
 
-func TestNewFilterRequest(t *testing.T) {
+func TestNewTransformRequest(t *testing.T) {
 
-	Convey("Given a call to NewFilterRequest", t, func() {
+	Convey("Given a call to NewTransformRequest", t, func() {
 
-		var transformerRequest, _ = NewFilterRequest(inputUrl, outputUrl, "foo")
+		var transformerRequest, _ = NewTransformRequest(inputUrl, outputUrl, "foo")
 
 		Convey("Then the inputUrl should have correct bucket and filename", func() {
 			So(transformerRequest.InputURL.GetBucketName(), ShouldEqual, inputBucket)
@@ -30,7 +30,7 @@ func TestNewFilterRequest(t *testing.T) {
 			So(transformerRequest.OutputURL.GetBucketName(), ShouldEqual, outputBucket)
 			So(transformerRequest.OutputURL.GetFilePath(), ShouldEqual, outputFile)
 		})
-		Convey("And the request id should be coorect", func() {
+		Convey("And the request id should be correct", func() {
 			So(transformerRequest.RequestID, ShouldEqual, "foo")
 		})
 
@@ -38,8 +38,8 @@ func TestNewFilterRequest(t *testing.T) {
 }
 
 func TestNewValidatesInputURL(t *testing.T) {
-	Convey("Given a call to NewFilterRequest with an invalid input", t, func() {
-		var transformerRequest, err = NewFilterRequest("invalid url", outputUrl, "foo")
+	Convey("Given a call to NewTransformRequest with an invalid input", t, func() {
+		var transformerRequest, err = NewTransformRequest("invalid url", outputUrl, "foo")
 		Convey("Then returned request is nil and err is not", func() {
 			So(err, ShouldNotEqual, nil)
 			So(transformerRequest, ShouldResemble, NilRequest)
@@ -48,8 +48,8 @@ func TestNewValidatesInputURL(t *testing.T) {
 }
 
 func TestNewValidatesOutputURL(t *testing.T) {
-	Convey("Given a call to NewFilterRequest with an invalid input", t, func() {
-		var transformerRequest, err = NewFilterRequest(inputUrl, "invalid url", "foo")
+	Convey("Given a call to NewTransformRequest with an invalid input", t, func() {
+		var transformerRequest, err = NewTransformRequest(inputUrl, "invalid url", "foo")
 		Convey("Then returned request is nil and err is not", func() {
 			So(err, ShouldNotEqual, nil)
 			So(transformerRequest, ShouldResemble, NilRequest)
@@ -57,8 +57,8 @@ func TestNewValidatesOutputURL(t *testing.T) {
 	})
 }
 
-func TestFilterRequestCanBeMarshaledAndUnmarshaled(t *testing.T) {
-	var transformerRequest, _ = NewFilterRequest(inputUrl, outputUrl, "foo")
+func TestTransformRequestCanBeMarshaledAndUnmarshaled(t *testing.T) {
+	var transformerRequest, _ = NewTransformRequest(inputUrl, outputUrl, "foo")
 
 	Convey("Given a transformerRequest marshaled to json", t, func() {
 		var marshaled, _ = json.Marshal(transformerRequest)
@@ -71,7 +71,7 @@ func TestFilterRequestCanBeMarshaledAndUnmarshaled(t *testing.T) {
 	})
 }
 func TestString(t *testing.T) {
-	var transformerRequest, _ = NewFilterRequest(inputUrl, outputUrl, "foo")
+	var transformerRequest, _ = NewTransformRequest(inputUrl, outputUrl, "foo")
 
 	Convey("Given a transformerRequest", t, func() {
 		Convey("Then the String() should resemble the original", func() {

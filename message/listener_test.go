@@ -21,7 +21,7 @@ func mockFilterFunc(transformerRequest event.TransformRequest) handlers.Transfor
 }
 
 func TestProcessor(t *testing.T) {
-	event, _ := event.NewFilterRequest(
+	event, _ := event.NewTransformRequest(
 		"s3://bucket/file",
 		"s3://bucket/file",
 		"foo",

@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -40,39 +38,9 @@ var csvTransformer transformer.CSVTransformer = transformer.NewTransformer()
 var readFilterRequestBody requestBodyReader = ioutil.ReadAll
 
 // Responses
-var transformRespReadReqBodyErr = TransformResponse{"Error when attempting to read request body."}
 var transformRespUnmarshalBody = TransformResponse{"Error when attempting to unmarshal request body."}
 var transformRespUnsupportedFileType = TransformResponse{"Unspported file type. Please specify a filePath for a .csv file."}
 var transformResponseSuccess = TransformResponse{"Your request is being processed."}
-
-// Handle CSV transformer handler. Get the requested file from AWS S3, transform it to a temporary file, then upload the temporary file.
-func Handle(w http.ResponseWriter, req *http.Request) {
-	bytes, err := readFilterRequestBody(req.Body)
-	defer req.Body.Close()
-
-	if err != nil {
-		log.ErrorR(req, err, nil)
-		WriteResponse(w, transformRespReadReqBodyErr, http.StatusBadRequest)
-		return
-	}
-
-	var transformRequest event.TransformRequest
-	if err := json.Unmarshal(bytes, &transformRequest); err != nil {
-		log.ErrorR(req, err, nil)
-		WriteResponse(w, transformRespUnmarshalBody, http.StatusBadRequest)
-		return
-	}
-	if len(transformRequest.RequestID) == 0 {
-		transformRequest.RequestID = log.Context(req)
-	}
-
-	response := HandleRequest(transformRequest)
-	status := http.StatusBadRequest
-	if response == transformResponseSuccess {
-		status = http.StatusOK
-	}
-	WriteResponse(w, response, status)
-}
 
 // Performs the transforming as specified in the TransformRequest, returning a TransformResponse
 func HandleRequest(transformRequest event.TransformRequest) (resp TransformResponse) {
