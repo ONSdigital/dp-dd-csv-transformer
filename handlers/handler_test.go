@@ -23,7 +23,8 @@ type MockAWSCli struct {
 	requestedFiles map[string]int
 	savedFiles     map[string]int
 	fileBytes      []byte
-	err            error
+	getCsvErr      error
+	saveFileErr    error
 }
 
 func newMockAwsClient() *MockAWSCli {
@@ -37,7 +38,7 @@ func (mock *MockAWSCli) GetCSV(fileURI aws.S3URL) (io.Reader, error) {
 	defer mutex.Unlock()
 
 	mock.requestedFiles[fileURI.String()]++
-	return bytes.NewReader(mock.fileBytes), mock.err
+	return bytes.NewReader(mock.fileBytes), mock.getCsvErr
 }
 
 func (mock *MockAWSCli) SaveFile(reader io.Reader, filePath aws.S3URL) error {
@@ -45,7 +46,7 @@ func (mock *MockAWSCli) SaveFile(reader io.Reader, filePath aws.S3URL) error {
 	defer mutex.Unlock()
 
 	mock.savedFiles[filePath.String()]++
-	return nil
+	return mock.saveFileErr
 }
 
 func (mock *MockAWSCli) getTotalInvocations() int {
@@ -106,18 +107,33 @@ func TestHandler(t *testing.T) {
 		So(1, ShouldEqual, mockCSVTransformer.invocations)
 	})
 
-	Convey("Should return appropriate error if the awsClient returns an error.", t, func() {
+	Convey("Should return appropriate error if the awsClient returns an error on read.", t, func() {
 		uri := "s3://bucket/target.csv"
 		awsErrMsg := "THIS IS AN AWS ERROR"
 
 		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
-		mockAWSCli.err = errors.New(awsErrMsg)
+		mockAWSCli.getCsvErr = errors.New(awsErrMsg)
 
 		response := HandleRequest(createTransformRequest(uri, uri))
 
 		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
 		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(uri))
 		So(0, ShouldEqual, mockCSVTransformer.invocations)
+		So(response, ShouldResemble, TransformResponse{awsErrMsg})
+	})
+
+	Convey("Should return appropriate error if the awsClient returns an error on save.", t, func() {
+		uri := "s3://bucket/target.csv"
+		awsErrMsg := "THIS IS AN AWS ERROR"
+
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli.saveFileErr = errors.New(awsErrMsg)
+
+		response := HandleRequest(createTransformRequest(uri, uri))
+
+		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
+		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(uri))
+		So(1, ShouldEqual, mockCSVTransformer.invocations)
 		So(response, ShouldResemble, TransformResponse{awsErrMsg})
 	})
 
