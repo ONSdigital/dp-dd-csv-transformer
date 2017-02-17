@@ -91,7 +91,6 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 	return transformResponseSuccess
 }
 
-
 func setCSVTransformer(t transformer.CSVTransformer) {
 	csvTransformer = t
 }

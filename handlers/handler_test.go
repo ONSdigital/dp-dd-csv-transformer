@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"sync"
 	"testing"
 
@@ -92,7 +91,7 @@ func (t *MockCSVTransformer) Transform(r io.Reader, w io.Writer, hc hierarchy.Hi
 func TestHandler(t *testing.T) {
 
 	Convey("Should invoke AWSClient once with the request file path.", t, func() {
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 
 		inputFile := "s3://bucket/test.csv"
 		outputFile := "s3://bucket/test.out"
@@ -111,7 +110,7 @@ func TestHandler(t *testing.T) {
 		uri := "s3://bucket/target.csv"
 		awsErrMsg := "THIS IS AN AWS ERROR"
 
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 		mockAWSCli.getCsvErr = errors.New(awsErrMsg)
 
 		response := HandleRequest(createTransformRequest(uri, uri))
@@ -126,7 +125,7 @@ func TestHandler(t *testing.T) {
 		uri := "s3://bucket/target.csv"
 		awsErrMsg := "THIS IS AN AWS ERROR"
 
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 		mockAWSCli.saveFileErr = errors.New(awsErrMsg)
 
 		response := HandleRequest(createTransformRequest(uri, uri))
@@ -140,7 +139,7 @@ func TestHandler(t *testing.T) {
 	Convey("Should return success response for happy path scenario", t, func() {
 		uri := "s3://bucket/target.csv"
 
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 
 		response := HandleRequest(createTransformRequest(uri, uri))
 
@@ -153,7 +152,7 @@ func TestHandler(t *testing.T) {
 	Convey("Should return appropriate error for unsupported file types", t, func() {
 		uri := "s3://bucket/unsupported.txt"
 
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 
 		response := HandleRequest(createTransformRequest(uri, uri))
 
@@ -163,7 +162,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	Convey("Should handle a panic.", t, func() {
-		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks()
 
 		inputFile := "s3://bucket/test.csv"
 		outputFile := "s3://bucket/test.out"
@@ -189,9 +188,8 @@ func createTransformRequest(input string, output string) event.TransformRequest 
 	return req
 }
 
-func setMocks(reader requestBodyReader) (*MockAWSCli, *MockCSVTransformer) {
+func setMocks() (*MockAWSCli, *MockCSVTransformer) {
 	mockAWSCli := newMockAwsClient()
 	mockCSVTransformer := newMockCSVTransformer()
-	setReader(reader)
 	return mockAWSCli, mockCSVTransformer
 }
