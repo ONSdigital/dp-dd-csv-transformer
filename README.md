@@ -50,12 +50,7 @@ Run the transformer
 make debug
 ```
 
-The following curl command will instruct the application attempt to get the specified file from the AWS bucket,
-transform it and write the output back to the output file in the bucket
-```
-curl -H "Content-Type: application/json" -X POST -d '{ "requestId": "MyTestRequest", inputUrl": "s3://dp-csv-filter/Open-Data-filtered.csv", "outputUrl": "s3://dp-csv-filter/Open-Data-transformed.csv" }' http://localhost:21200/transform
-```
-Or paste the following line into the kafka console producer mentioned above:
+Paste the following line into the kafka console producer mentioned above:
 ```
 { "inputUrl": "s3://dp-csv-filter/Open-Data-v3-filtered.csv", "outputUrl": "s3://dp-dd-csv-filter/Open-Data-v3-transformed.csv" }
 ```
@@ -66,7 +61,6 @@ The project includes a small data set in the `sample_csv` directory for test usa
 
 | Environment variable | Default                                                 | Description
 | -------------------- | ------------------------------------------------------- | ----------------------------------------------------
-| BIND_ADDR            | ":21200"                                                | The host and port to bind to.
 | KAFKA_ADDR           | "http://localhost:9092"                                 | The Kafka address to request messages from.
 | HIEARARCHY_ENDPOINT  | "http://localhost:20099/hierarchies/{hierarchy_id}"     | The endpoint to call to get hierarchy information.
 | AWS_REGION           | "eu-west-1"                                             | The AWS region to use.
