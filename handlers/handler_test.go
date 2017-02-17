@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"sync"
 	"testing"
 
@@ -26,7 +23,8 @@ type MockAWSCli struct {
 	requestedFiles map[string]int
 	savedFiles     map[string]int
 	fileBytes      []byte
-	err            error
+	getCsvErr      error
+	saveFileErr    error
 }
 
 func newMockAwsClient() *MockAWSCli {
@@ -40,7 +38,7 @@ func (mock *MockAWSCli) GetCSV(fileURI aws.S3URL) (io.Reader, error) {
 	defer mutex.Unlock()
 
 	mock.requestedFiles[fileURI.String()]++
-	return bytes.NewReader(mock.fileBytes), mock.err
+	return bytes.NewReader(mock.fileBytes), mock.getCsvErr
 }
 
 func (mock *MockAWSCli) SaveFile(reader io.Reader, filePath aws.S3URL) error {
@@ -48,7 +46,7 @@ func (mock *MockAWSCli) SaveFile(reader io.Reader, filePath aws.S3URL) error {
 	defer mutex.Unlock()
 
 	mock.savedFiles[filePath.String()]++
-	return nil
+	return mock.saveFileErr
 }
 
 func (mock *MockAWSCli) getTotalInvocations() int {
@@ -94,126 +92,97 @@ func (t *MockCSVTransformer) Transform(r io.Reader, w io.Writer, hc hierarchy.Hi
 func TestHandler(t *testing.T) {
 
 	Convey("Should invoke AWSClient once with the request file path.", t, func() {
-		recorder := httptest.NewRecorder()
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
 
 		inputFile := "s3://bucket/test.csv"
 		outputFile := "s3://bucket/test.out"
-		transformerRequest := createFilterRequest(inputFile, outputFile)
+		transformRequest := createTransformRequest(inputFile, outputFile)
 
-		Handle(recorder, createRequest(transformerRequest))
+		response := HandleRequest(transformRequest)
 
-		splitterResponse, status := extractResponseBody(recorder)
-
-		So(splitterResponse, ShouldResemble, transformResponseSuccess)
-		So(status, ShouldResemble, http.StatusOK)
+		So(response, ShouldResemble, transformResponseSuccess)
 		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
 		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(inputFile))
 		So(1, ShouldEqual, mockAWSCli.countOfSaveInvocations(outputFile))
-		So(1, ShouldEqual, mockCSVProcessor.invocations)
+		So(1, ShouldEqual, mockCSVTransformer.invocations)
 	})
 
-	Convey("Should return appropriate error if cannot unmarshall the request body into a TransformRequest.", t, func() {
-		recorder := httptest.NewRecorder()
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
-
-		Handle(recorder, createRequest("This is not a TransformRequest"))
-
-		splitterResponse, status := extractResponseBody(recorder)
-
-		So(0, ShouldEqual, mockAWSCli.getTotalInvocations())
-		So(0, ShouldEqual, mockCSVProcessor.invocations)
-		So(splitterResponse, ShouldResemble, transformRespUnmarshalBody)
-		So(status, ShouldResemble, http.StatusBadRequest)
-	})
-
-	Convey("Should return appropriate error if the awsClient returns an error.", t, func() {
-		recorder := httptest.NewRecorder()
+	Convey("Should return appropriate error if the awsClient returns an error on read.", t, func() {
 		uri := "s3://bucket/target.csv"
 		awsErrMsg := "THIS IS AN AWS ERROR"
 
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
-		mockAWSCli.err = errors.New(awsErrMsg)
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli.getCsvErr = errors.New(awsErrMsg)
 
-		Handle(recorder, createRequest(createFilterRequest(uri, uri)))
-		splitterResponse, status := extractResponseBody(recorder)
+		response := HandleRequest(createTransformRequest(uri, uri))
 
 		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
 		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(uri))
-		So(0, ShouldEqual, mockCSVProcessor.invocations)
-		So(splitterResponse, ShouldResemble, TransformResponse{awsErrMsg})
-		So(status, ShouldResemble, http.StatusBadRequest)
+		So(0, ShouldEqual, mockCSVTransformer.invocations)
+		So(response, ShouldResemble, TransformResponse{awsErrMsg})
+	})
+
+	Convey("Should return appropriate error if the awsClient returns an error on save.", t, func() {
+		uri := "s3://bucket/target.csv"
+		awsErrMsg := "THIS IS AN AWS ERROR"
+
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
+		mockAWSCli.saveFileErr = errors.New(awsErrMsg)
+
+		response := HandleRequest(createTransformRequest(uri, uri))
+
+		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
+		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(uri))
+		So(1, ShouldEqual, mockCSVTransformer.invocations)
+		So(response, ShouldResemble, TransformResponse{awsErrMsg})
 	})
 
 	Convey("Should return success response for happy path scenario", t, func() {
-		recorder := httptest.NewRecorder()
 		uri := "s3://bucket/target.csv"
 
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
 
-		Handle(recorder, createRequest(createFilterRequest(uri, uri)))
-		splitterResponse, statusCode := extractResponseBody(recorder)
+		response := HandleRequest(createTransformRequest(uri, uri))
 
 		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
 		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(uri))
-		So(1, ShouldEqual, mockCSVProcessor.invocations)
-		So(splitterResponse, ShouldResemble, transformResponseSuccess)
-		So(statusCode, ShouldResemble, http.StatusOK)
+		So(1, ShouldEqual, mockCSVTransformer.invocations)
+		So(response, ShouldResemble, transformResponseSuccess)
 	})
 
 	Convey("Should return appropriate error for unsupported file types", t, func() {
-		recorder := httptest.NewRecorder()
 		uri := "s3://bucket/unsupported.txt"
 
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
 
-		Handle(recorder, createRequest(createFilterRequest(uri, uri)))
+		response := HandleRequest(createTransformRequest(uri, uri))
 
-		splitterResponse, status := extractResponseBody(recorder)
 		So(0, ShouldEqual, mockAWSCli.getTotalInvocations())
-		So(0, ShouldEqual, mockCSVProcessor.invocations)
-		So(splitterResponse, ShouldResemble, transformRespUnsupportedFileType)
-		So(status, ShouldResemble, http.StatusBadRequest)
+		So(0, ShouldEqual, mockCSVTransformer.invocations)
+		So(response, ShouldResemble, transformRespUnsupportedFileType)
 	})
 
 	Convey("Should handle a panic.", t, func() {
-		recorder := httptest.NewRecorder()
-		mockAWSCli, mockCSVProcessor := setMocks(ioutil.ReadAll)
+		mockAWSCli, mockCSVTransformer := setMocks(ioutil.ReadAll)
 
 		inputFile := "s3://bucket/test.csv"
 		outputFile := "s3://bucket/test.out"
-		transformerRequest := createFilterRequest(inputFile, outputFile)
 
-		mockCSVProcessor.shouldPanic = true
+		mockCSVTransformer.shouldPanic = true
 
-		Handle(recorder, createRequest(transformerRequest))
+		response := HandleRequest(createTransformRequest(inputFile, outputFile))
 
-		splitterResponse, status := extractResponseBody(recorder)
-
-		So(splitterResponse, ShouldResemble, TransformResponse{PANIC_MESSAGE})
-		So(status, ShouldResemble, http.StatusBadRequest)
+		So(response, ShouldResemble, TransformResponse{PANIC_MESSAGE})
 		So(1, ShouldEqual, mockAWSCli.getTotalInvocations())
 		So(1, ShouldEqual, mockAWSCli.getInvocationsByURI(inputFile))
 		So(0, ShouldEqual, mockAWSCli.countOfSaveInvocations(outputFile))
-		So(1, ShouldEqual, mockCSVProcessor.invocations)
+		So(1, ShouldEqual, mockCSVTransformer.invocations)
 	})
 
 }
 
-func extractResponseBody(rec *httptest.ResponseRecorder) (TransformResponse, int) {
-	var actual = &TransformResponse{}
-	json.Unmarshal([]byte(rec.Body.String()), actual)
-	return *actual, rec.Code
-}
-
-func createRequest(body interface{}) *http.Request {
-	b, _ := json.Marshal(body)
-	request, _ := http.NewRequest("POST", "/transformer", bytes.NewBuffer(b))
-	return request
-}
-
-func createFilterRequest(input string, output string) event.TransformRequest {
-	req, err := event.NewFilterRequest(input, output, "foo")
+func createTransformRequest(input string, output string) event.TransformRequest {
+	req, err := event.NewTransformRequest(input, output, "foo")
 	if err != nil {
 		panic(err)
 	}
@@ -222,7 +191,7 @@ func createFilterRequest(input string, output string) event.TransformRequest {
 
 func setMocks(reader requestBodyReader) (*MockAWSCli, *MockCSVTransformer) {
 	mockAWSCli := newMockAwsClient()
-	mockCSVProcessor := newMockCSVTransformer()
+	mockCSVTransformer := newMockCSVTransformer()
 	setReader(reader)
-	return mockAWSCli, mockCSVProcessor
+	return mockAWSCli, mockCSVTransformer
 }

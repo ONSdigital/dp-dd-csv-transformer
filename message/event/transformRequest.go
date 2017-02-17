@@ -15,7 +15,7 @@ type TransformRequest struct {
 
 var NilRequest = TransformRequest{}
 
-func NewFilterRequest(inputUrl string, outputUrl string, requestId string) (TransformRequest, error) {
+func NewTransformRequest(inputUrl string, outputUrl string, requestId string) (TransformRequest, error) {
 	var input, output aws.S3URL
 	var err error
 	if input, err = aws.NewS3URL(inputUrl); err != nil {

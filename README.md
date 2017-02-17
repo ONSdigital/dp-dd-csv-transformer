@@ -1,7 +1,7 @@
 dp-csv-transformer
 ================
 
-Application retrieves a specified CSV file from AWS s3 bucket, and transformers it by adding values to dimensions with hierarchies.  The output is then written to a new file in an AWS s3 bucket.
+Application retrieves a specified CSV file from AWS s3 bucket, and transforms it by adding values to dimensions with hierarchies.  The output is then written to a new file in an AWS s3 bucket.
 
 The ```/transformer``` endpoint accepts HTTP POST request with a FilterRequest body ```{"filePath": "$PATH_TO_FILE$"}```
 
@@ -50,12 +50,7 @@ Run the transformer
 make debug
 ```
 
-The following curl command will instruct the application attempt to get the specified file from the AWS bucket,
-transformer it and write the output back to the output file in the bucket
-```
-curl -H "Content-Type: application/json" -X POST -d '{ "requestId": "MyTestRequest", inputUrl": "s3://dp-csv-filter/Open-Data-filtered.csv", "outputUrl": "s3://dp-csv-filter/Open-Data-transformed.csv" }' http://localhost:21100/filter
-```
-Or paste the following line into the kafka console producer mentioned above:
+Paste the following line into the kafka console producer mentioned above:
 ```
 { "inputUrl": "s3://dp-csv-filter/Open-Data-v3-filtered.csv", "outputUrl": "s3://dp-dd-csv-filter/Open-Data-v3-transformed.csv" }
 ```
@@ -66,7 +61,6 @@ The project includes a small data set in the `sample_csv` directory for test usa
 
 | Environment variable | Default                                                 | Description
 | -------------------- | ------------------------------------------------------- | ----------------------------------------------------
-| BIND_ADDR            | ":21100"                                                | The host and port to bind to.
 | KAFKA_ADDR           | "http://localhost:9092"                                 | The Kafka address to request messages from.
 | HIEARARCHY_ENDPOINT  | "http://localhost:20099/hierarchies/{hierarchy_id}"     | The endpoint to call to get hierarchy information.
 | AWS_REGION           | "eu-west-1"                                             | The AWS region to use.

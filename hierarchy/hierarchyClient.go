@@ -90,11 +90,11 @@ func mapHierarchyEntries(entryMap map[string]*HierarchyEntry, entries []*Hierarc
 
 // getHierarchyValue
 func (hc hierarchyClient) GetHierarchyValue(hierarchyId string, entryCode string) (string, error) {
-	hierarchy, err := hc.GetHierarchy(hierarchyId)
+	h, err := hc.GetHierarchy(hierarchyId)
 	if err != nil {
 		return "", err
 	}
-	entry := hierarchy.EntryMap[entryCode]
+	entry := h.EntryMap[entryCode]
 	if entry == nil {
 		return "", errors.New("No entry found with code " + entryCode + " in hierarchy " + hierarchyId)
 	}
