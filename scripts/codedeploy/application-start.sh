@@ -6,7 +6,7 @@ ECR_REPOSITORY_URI=
 GIT_COMMIT=
 
 INSTANCE=$(curl -s http://instance-data/latest/meta-data/instance-id)
-CONFIG=$(aws --region $AWS_REGION ec2 describe-tags --transformers "Name=resource-id,Values=$INSTANCE" "Name=key,Values=Configuration" --output text | awk '{print $5}')
+CONFIG=$(aws --region $AWS_REGION ec2 describe-tags --filters "Name=resource-id,Values=$INSTANCE" "Name=key,Values=Configuration" --output text | awk '{print $5}')
 
 (aws s3 cp s3://$CONFIG_BUCKET/dp-dd-csv-transformer/$CONFIG.asc . && gpg --decrypt $CONFIG.asc > $CONFIG) || exit $?
 
