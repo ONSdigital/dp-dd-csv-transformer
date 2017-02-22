@@ -72,7 +72,7 @@ func (cli *Service) GetCSV(s3url S3URL) (io.Reader, error) {
 	result, err := s3Service.GetObject(request)
 
 	if err != nil {
-		log.Error(err, nil)
+		log.Error(err, log.Data{"request": request})
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (cli *Service) GetCSV(s3url S3URL) (io.Reader, error) {
 	defer result.Body.Close()
 
 	if err != nil {
-		log.Error(err, nil)
+		log.Error(err, log.Data{"request": request})
 		return nil, err
 	}
 
