@@ -9,7 +9,7 @@ The ```/transformer``` endpoint accepts HTTP POST request with a FilterRequest b
 
 First grab the code
 
-`go get github.com/ONSdigital/dp-csv-transformer`
+`go get github.com/ONSdigital/dp-dd-csv-transformer`
 
 You will need to have Kafka set up locally. Set the following env variables (the example here uses the default ports)
 

@@ -119,7 +119,7 @@ func (p *Transformer) Transform(r io.Reader, w io.Writer, hc hierarchy.Hierarchy
 	lineCounter := 0
 
 	// ignore the headers in the first line
-	_, err := csvReader.Read()
+	originalHeaders, err := csvReader.Read()
 	if err != nil {
 		log.ErrorC(requestId, err, log.Data{"message": "Unable to read header row"})
 		return err
@@ -127,6 +127,11 @@ func (p *Transformer) Transform(r io.Reader, w io.Writer, hc hierarchy.Hierarchy
 
 	// read the first row
 	row, err := csvReader.Read()
+	if err == io.EOF {
+		// no content - write the header row and quit
+		csvWriter.Write(originalHeaders)
+		return nil
+	}
 	if err != nil {
 		log.ErrorC(requestId, err, log.Data{"message": "Unable to read first row"})
 		return err
