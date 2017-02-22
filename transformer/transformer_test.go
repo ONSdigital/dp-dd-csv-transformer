@@ -108,6 +108,16 @@ func TestProcessor(t *testing.T) {
 			// expected columns = 3 (base data) + 4 (geog) + 3 (year) + 4 (NACE) + 4 (Prodcom)
 			So(columns, ShouldEqual, 18)
 		})
+
+		Convey("Should handle a file containing only headers", func() {
+			mockClient := createMockHierarchyClient([]string{"time"}, []string{}, []string{"K04000001"})
+			inputFile := openFile("../sample_csv/AF001EW_v3_headers_only.csv", "Error loading input file. Does it exist? ")
+			outputFile := createFileInBuildDir("transformed-5.csv", "Error creating output file.")
+			err := Processor.Transform(inputFile, outputFile, mockClient, "test")
+			So(err, ShouldBeNil)
+			rows, _ := countLinesAndColumnsInFile(outputFile.Name())
+			So(rows, ShouldEqual, 1)
+		})
 	})
 
 }
