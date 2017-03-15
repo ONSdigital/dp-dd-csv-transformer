@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"compress/gzip"
+	"fmt"
 	"github.com/ONSdigital/dp-dd-csv-transformer/config"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,8 +14,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"time"
-	"fmt"
 )
+
+const CONTENT_ENCODING_GZIP = "gzip"
 
 // AWSClient interface defining the AWS client.
 type AWSService interface {
@@ -39,10 +42,31 @@ func (cli *Service) SaveFile(requestID string, reader io.Reader, s3url S3URL) er
 
 	uploader := s3manager.NewUploader(session.New(&aws.Config{Region: aws.String(config.AWSRegion)}))
 
+	uploadInput := reader
+	if config.UseGzipCompression {
+		pipeReader, pipeWriter := io.Pipe()
+		go func() {
+			log.DebugC(requestID, "Compressing output on-the-fly", nil)
+			bytesWritten, err := io.Copy(gzip.NewWriter(pipeWriter), reader)
+			if err != nil {
+				log.ErrorC(requestID, err, nil)
+				pipeWriter.CloseWithError(err)
+			} else {
+				log.DebugC(requestID, fmt.Sprintf("Copied %d bytes via gzip", bytesWritten), nil)
+				pipeWriter.Close()
+			}
+		}()
+		uploadInput = pipeReader
+	}
+
+	contentEncoding := new(string)
+	*contentEncoding = CONTENT_ENCODING_GZIP
+
 	result, err := uploader.Upload(&s3manager.UploadInput{
-		Body:   reader,
-		Bucket: aws.String(s3url.GetBucketName()),
-		Key:    aws.String(s3url.GetFilePath()),
+		Body:            uploadInput,
+		Bucket:          aws.String(s3url.GetBucketName()),
+		Key:             aws.String(s3url.GetFilePath()),
+		ContentEncoding: contentEncoding,
 	})
 
 	if err != nil {
