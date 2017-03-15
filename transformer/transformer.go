@@ -8,6 +8,7 @@ import (
 
 	"github.com/ONSdigital/dp-dd-csv-transformer/hierarchy"
 	"github.com/ONSdigital/go-ns/log"
+	"time"
 )
 
 const (
@@ -113,10 +114,16 @@ func (d *Dimension) getHierarchyValue(row []string, requestId string) string {
 
 func (p *Transformer) Transform(r io.Reader, w io.Writer, hc hierarchy.HierarchyClient, requestId string) error {
 
+	lineCounter := 0
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		log.DebugC(requestId, fmt.Sprintf("Transform, duration_ns: %d", endTime.Sub(startTime).Nanoseconds()), log.Data{})
+	}()
+
 	csvReader, csvWriter := csv.NewReader(r), csv.NewWriter(w)
 	defer csvWriter.Flush()
 
-	lineCounter := 0
 
 	// ignore the headers in the first line
 	originalHeaders, err := csvReader.Read()
