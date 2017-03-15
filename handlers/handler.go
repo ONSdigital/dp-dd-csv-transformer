@@ -11,7 +11,7 @@ import (
 
 	"fmt"
 
-	"github.com/ONSdigital/dp-dd-csv-transformer/aws"
+	"github.com/ONSdigital/dp-dd-csv-transformer/ons_aws"
 	"github.com/ONSdigital/dp-dd-csv-transformer/hierarchy"
 	"github.com/ONSdigital/dp-dd-csv-transformer/message/event"
 	"github.com/ONSdigital/dp-dd-csv-transformer/transformer"
@@ -32,7 +32,7 @@ type TransformFunc func(event.TransformRequest) TransformResponse
 
 var unsupportedFileTypeErr = errors.New("Unspported file type.")
 var awsClientErr = errors.New("Error while attempting get to get from from AWS s3 bucket.")
-var awsService = aws.NewService()
+var awsService = ons_aws.NewService()
 var csvTransformer transformer.CSVTransformer = transformer.NewTransformer()
 
 // Responses
@@ -88,7 +88,7 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 
 	err = awsService.SaveFile(transformRequest.RequestID, bufio.NewReader(tmpFile), transformRequest.OutputURL)
 	if err != nil {
-		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to save output file to aws", "OutputURL": transformRequest.OutputURL})
+		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to save output file to ons_aws", "OutputURL": transformRequest.OutputURL})
 		return TransformResponse{err.Error()}
 	}
 
@@ -101,6 +101,6 @@ func setCSVTransformer(t transformer.CSVTransformer) {
 	csvTransformer = t
 }
 
-func setAWSClient(c aws.AWSService) {
+func setAWSClient(c ons_aws.AWSService) {
 	awsService = c
 }
