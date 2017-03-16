@@ -53,7 +53,8 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 		return transformRespUnsupportedFileType
 	}
 
-	awsReader, err := awsService.GetCSV(transformRequest.RequestID, transformRequest.InputURL)
+	awsReadCloser, err := awsService.GetCSV(transformRequest.RequestID, transformRequest.InputURL)
+	defer awsReadCloser.Close()
 	if err != nil {
 		log.ErrorC(transformRequest.RequestID, awsClientErr, log.Data{"details": err.Error()})
 		return TransformResponse{err.Error()}
@@ -74,7 +75,7 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 		os.Remove(outputFileLocation)
 	}()
 
-	err = csvTransformer.Transform(awsReader, bufio.NewWriter(outputFile), hierarchy.NewHierarchyClient(), transformRequest.RequestID)
+	err = csvTransformer.Transform(awsReadCloser, bufio.NewWriter(outputFile), hierarchy.NewHierarchyClient(), transformRequest.RequestID)
 	if err != nil {
 		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to transform"})
 		return TransformResponse{err.Error()}
