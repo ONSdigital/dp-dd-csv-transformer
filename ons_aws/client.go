@@ -47,13 +47,16 @@ func (cli *Service) SaveFile(requestID string, reader io.Reader, s3url S3URL) er
 		pipeReader, pipeWriter := io.Pipe()
 		go func() {
 			log.DebugC(requestID, "Compressing output on-the-fly", nil)
-			bytesWritten, err := io.Copy(gzip.NewWriter(pipeWriter), reader)
+			gzipWriter := gzip.NewWriter(pipeWriter)
+			defer func() {
+				gzipWriter.Close()
+				pipeWriter.Close()
+			}()
+			bytesWritten, err := io.Copy(gzipWriter, reader)
 			if err != nil {
 				log.ErrorC(requestID, err, nil)
-				pipeWriter.CloseWithError(err)
 			} else {
 				log.DebugC(requestID, fmt.Sprintf("Copied %d bytes via gzip", bytesWritten), nil)
-				pipeWriter.Close()
 			}
 		}()
 		uploadInput = pipeReader
