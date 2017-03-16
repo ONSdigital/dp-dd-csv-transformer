@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-dd-csv-transformer/hierarchy"
 	"github.com/ONSdigital/dp-dd-csv-transformer/message/event"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 )
 
 var mutex = &sync.Mutex{}
@@ -32,12 +33,12 @@ func newMockAwsClient() *MockAWSCli {
 	return mock
 }
 
-func (mock *MockAWSCli) GetCSV(requestId string, fileURI ons_aws.S3URL) (io.Reader, error) {
+func (mock *MockAWSCli) GetCSV(requestId string, fileURI ons_aws.S3URL) (io.ReadCloser, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	mock.requestedFiles[fileURI.String()]++
-	return bytes.NewReader(mock.fileBytes), mock.getCsvErr
+	return ioutil.NopCloser(bytes.NewReader(mock.fileBytes)), mock.getCsvErr
 }
 
 func (mock *MockAWSCli) SaveFile(requestId string, reader io.Reader, filePath ons_aws.S3URL) error {

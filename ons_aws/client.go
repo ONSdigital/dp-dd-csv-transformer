@@ -1,9 +1,7 @@
 package ons_aws
 
 import (
-	"bytes"
 	"io"
-	"io/ioutil"
 
 	"compress/gzip"
 	"fmt"
@@ -20,7 +18,8 @@ const CONTENT_ENCODING_GZIP = "gzip"
 
 // AWSClient interface defining the AWS client.
 type AWSService interface {
-	GetCSV(requestID string, s3url S3URL) (io.Reader, error)
+	// GetFile get the requested file from AWS. The client is responsible for closing the reader.
+	GetCSV(requestID string, s3url S3URL) (io.ReadCloser, error)
 	SaveFile(requestID string, reader io.Reader, s3url S3URL) error
 }
 
@@ -82,8 +81,8 @@ func (cli *Service) SaveFile(requestID string, reader io.Reader, s3url S3URL) er
 	return nil
 }
 
-// GetFile get the requested file from AWS.
-func (cli *Service) GetCSV(requestID string, s3url S3URL) (io.Reader, error) {
+// GetFile get the requested file from AWS. The client is responsible for closing the reader.
+func (cli *Service) GetCSV(requestID string, s3url S3URL) (io.ReadCloser, error) {
 	startTime := time.Now()
 	defer func() {
 		endTime := time.Now()
@@ -115,13 +114,5 @@ func (cli *Service) GetCSV(requestID string, s3url S3URL) (io.Reader, error) {
 		return nil, err
 	}
 
-	b, err := ioutil.ReadAll(result.Body)
-	defer result.Body.Close()
-
-	if err != nil {
-		log.ErrorC(requestID, err, log.Data{"request": request})
-		return nil, err
-	}
-
-	return bytes.NewReader(b), nil
+	return result.Body, nil
 }
