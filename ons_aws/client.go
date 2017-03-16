@@ -42,7 +42,8 @@ func (cli *Service) SaveFile(requestID string, reader io.Reader, s3url S3URL) er
 
 	uploader := s3manager.NewUploader(session.New(&aws.Config{Region: aws.String(config.AWSRegion)}))
 
-	uploadInput := reader
+	var contentEncoding *string = nil
+	var uploadInput io.Reader = reader
 	if config.UseGzipCompression {
 		pipeReader, pipeWriter := io.Pipe()
 		go func() {
@@ -57,10 +58,10 @@ func (cli *Service) SaveFile(requestID string, reader io.Reader, s3url S3URL) er
 			}
 		}()
 		uploadInput = pipeReader
+		// The Go AWS SDK takes a *string for headers, and Go won't let you take a pointer to a string literal/constant
+		contentEncoding = new(string)
+		*contentEncoding = CONTENT_ENCODING_GZIP
 	}
-
-	contentEncoding := new(string)
-	*contentEncoding = CONTENT_ENCODING_GZIP
 
 	result, err := uploader.Upload(&s3manager.UploadInput{
 		Body:            uploadInput,
