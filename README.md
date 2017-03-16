@@ -66,6 +66,7 @@ The project includes a small data set in the `sample_csv` directory for test usa
 | AWS_REGION           | "eu-west-1"                                             | The AWS region to use.
 | KAFKA_CONSUMER_GROUP | "transform-request"                                     | The name of the Kafka group to read messages from.
 | KAFKA_CONSUMER_TOPIC | "transform-request"                                     | The name of the Kafka topic to read messages from.
+| USE_GZIP             | false                                                   | Whether to apply gzip compression to the output file and set `Content-Encoding: gzip` header on downloads.
 
 ### Contributing
 

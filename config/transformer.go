@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ONSdigital/go-ns/log"
+	"strconv"
 )
 
 const bindAddrKey = "BIND_ADDR"
@@ -12,6 +13,7 @@ const kafkaConsumerGroup = "KAFKA_CONSUMER_GROUP"
 const kafkaConsumerTopic = "KAFKA_CONSUMER_TOPIC"
 const awsRegionKey = "AWS_REGION"
 const hierarchyEndpoint = "HIERARCHY_ENDPOINT"
+const useGzipCompression = "USE_GZIP"
 
 const HIERACHY_ID_PLACEHOLDER = "{hierarchy_id}"
 
@@ -32,6 +34,9 @@ var KafkaConsumerTopic = "transform-request"
 
 // HierarchyEndpoint the url of the metadata api hierarchy endpoint.
 var HierarchyEndpoint = "http://localhost:20099/hierarchies/" + HIERACHY_ID_PLACEHOLDER
+
+// UseGzipCompression determines whether files should be compressed when uploaded to S3 and served with `Content-Encoding: gzip` header.
+var UseGzipCompression = false
 
 func init() {
 	if bindAddrEnv := os.Getenv(bindAddrKey); len(bindAddrEnv) > 0 {
@@ -58,6 +63,14 @@ func init() {
 		HierarchyEndpoint = hierarchyEndpointEnv
 	}
 
+	if useGzipCompressionEnv := os.Getenv(useGzipCompression); len(useGzipCompressionEnv) > 0 {
+		var err error
+		UseGzipCompression, err = strconv.ParseBool(useGzipCompressionEnv)
+		if err != nil {
+			panic("Invalid boolean value for " + useGzipCompression + ": " + useGzipCompressionEnv)
+		}
+	}
+
 }
 
 func Load() {
@@ -69,5 +82,6 @@ func Load() {
 		kafkaConsumerGroup: KafkaConsumerGroup,
 		kafkaConsumerTopic: KafkaConsumerTopic,
 		hierarchyEndpoint:  HierarchyEndpoint,
+		useGzipCompression: UseGzipCompression,
 	})
 }
