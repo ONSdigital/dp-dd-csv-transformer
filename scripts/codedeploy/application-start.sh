@@ -17,6 +17,7 @@ source $CONFIG && docker run -d                    \
   --env=KAFKA_CONSUMER_GROUP=$KAFKA_CONSUMER_GROUP \
   --env=KAFKA_CONSUMER_TOPIC=$KAFKA_CONSUMER_TOPIC \
   --env=HIERARCHY_ENDPOINT=$HIERARCHY_ENDPOINT     \
+  --env=USE_GZIP=$USE_GZIP                         \
   --name=dp-dd-csv-transformer                     \
   --net=$DOCKER_NETWORK                            \
   --restart=always                                 \
