@@ -11,7 +11,7 @@ import (
 
 	"fmt"
 
-	"github.com/ONSdigital/dp-dd-csv-transformer/aws"
+	"github.com/ONSdigital/dp-dd-csv-transformer/ons_aws"
 	"github.com/ONSdigital/dp-dd-csv-transformer/hierarchy"
 	"github.com/ONSdigital/dp-dd-csv-transformer/message/event"
 	"github.com/ONSdigital/dp-dd-csv-transformer/transformer"
@@ -32,7 +32,7 @@ type TransformFunc func(event.TransformRequest) TransformResponse
 
 var unsupportedFileTypeErr = errors.New("Unspported file type.")
 var awsClientErr = errors.New("Error while attempting get to get from from AWS s3 bucket.")
-var awsService = aws.NewService()
+var awsService = ons_aws.NewService()
 var csvTransformer transformer.CSVTransformer = transformer.NewTransformer()
 
 // Responses
@@ -42,12 +42,19 @@ var transformResponseSuccess = TransformResponse{"Your request is being processe
 // Performs the transforming as specified in the TransformRequest, returning a TransformResponse
 func HandleRequest(transformRequest event.TransformRequest) (resp TransformResponse) {
 
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		log.DebugC(transformRequest.RequestID, fmt.Sprintf("Processed TransformRequest, duration_ns: %d", endTime.Sub(startTime).Nanoseconds()), log.Data{"start": startTime, "end": endTime})
+	}()
+
 	if fileType := filepath.Ext(transformRequest.InputURL.GetFilePath()); fileType != csvFileExt {
 		log.ErrorC(transformRequest.RequestID, unsupportedFileTypeErr, log.Data{"expected": csvFileExt, "actual": fileType})
 		return transformRespUnsupportedFileType
 	}
 
-	awsReader, err := awsService.GetCSV(transformRequest.InputURL)
+	awsReadCloser, err := awsService.GetCSV(transformRequest.RequestID, transformRequest.InputURL)
+	defer awsReadCloser.Close()
 	if err != nil {
 		log.ErrorC(transformRequest.RequestID, awsClientErr, log.Data{"details": err.Error()})
 		return TransformResponse{err.Error()}
@@ -68,7 +75,7 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 		os.Remove(outputFileLocation)
 	}()
 
-	err = csvTransformer.Transform(awsReader, bufio.NewWriter(outputFile), hierarchy.NewHierarchyClient(), transformRequest.RequestID)
+	err = csvTransformer.Transform(awsReadCloser, bufio.NewWriter(outputFile), hierarchy.NewHierarchyClient(), transformRequest.RequestID)
 	if err != nil {
 		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to transform"})
 		return TransformResponse{err.Error()}
@@ -80,9 +87,9 @@ func HandleRequest(transformRequest event.TransformRequest) (resp TransformRespo
 		return TransformResponse{err.Error()}
 	}
 
-	err = awsService.SaveFile(bufio.NewReader(tmpFile), transformRequest.OutputURL)
+	err = awsService.SaveFile(transformRequest.RequestID, bufio.NewReader(tmpFile), transformRequest.OutputURL)
 	if err != nil {
-		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to save output file to aws", "OutputURL": transformRequest.OutputURL})
+		log.ErrorC(transformRequest.RequestID, err, log.Data{"message": "Failed to save output file to ons_aws", "OutputURL": transformRequest.OutputURL})
 		return TransformResponse{err.Error()}
 	}
 
@@ -95,6 +102,6 @@ func setCSVTransformer(t transformer.CSVTransformer) {
 	csvTransformer = t
 }
 
-func setAWSClient(c aws.AWSService) {
+func setAWSClient(c ons_aws.AWSService) {
 	awsService = c
 }

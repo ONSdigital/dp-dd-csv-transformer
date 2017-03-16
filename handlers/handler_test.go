@@ -7,17 +7,18 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ONSdigital/dp-dd-csv-transformer/aws"
+	"github.com/ONSdigital/dp-dd-csv-transformer/ons_aws"
 	"github.com/ONSdigital/dp-dd-csv-transformer/hierarchy"
 	"github.com/ONSdigital/dp-dd-csv-transformer/message/event"
 	. "github.com/smartystreets/goconvey/convey"
+	"io/ioutil"
 )
 
 var mutex = &sync.Mutex{}
 
 const PANIC_MESSAGE = "Panic!!!"
 
-// MockAWSCli mock implementation of aws.Client
+// MockAWSCli mock implementation of ons_aws.Client
 type MockAWSCli struct {
 	requestedFiles map[string]int
 	savedFiles     map[string]int
@@ -32,15 +33,15 @@ func newMockAwsClient() *MockAWSCli {
 	return mock
 }
 
-func (mock *MockAWSCli) GetCSV(fileURI aws.S3URL) (io.Reader, error) {
+func (mock *MockAWSCli) GetCSV(requestId string, fileURI ons_aws.S3URL) (io.ReadCloser, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	mock.requestedFiles[fileURI.String()]++
-	return bytes.NewReader(mock.fileBytes), mock.getCsvErr
+	return ioutil.NopCloser(bytes.NewReader(mock.fileBytes)), mock.getCsvErr
 }
 
-func (mock *MockAWSCli) SaveFile(reader io.Reader, filePath aws.S3URL) error {
+func (mock *MockAWSCli) SaveFile(requestId string, reader io.Reader, filePath ons_aws.S3URL) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
